@@ -264,12 +264,16 @@ RBG integrates with ecosystem components for production LLM inference:
 
 ### Version Compatibility
 
-| RBG Version | Kubernetes | LeaderWorkerSet |
-|:------------|:----------:|:---------------:|
-| v0.7.0 | >=v1.22.x | Not Required |
-| v0.6.0 | >=v1.28.x | >=v0.7.0 |
-| v0.5.0 | >=v1.28.x | >=v0.6.0 |
-| v0.4.0 | >=v1.28.x | >=v0.7.0 |
+| RBG Version | Kubernetes | LeaderWorkerSet | Notes |
+|:------------|:----------:|:---------------:|:---------------:|
+| main / v0.7.0-alpha.x | >=v1.25.x | Not Required | CEL validation requires K8s 1.25+ |
+| v0.7.0 | >=v1.22.x | Not Required | |
+| v0.6.0 | >=v1.28.x | >=v0.7.0 | |
+| v0.5.0 | >=v1.28.x | >=v0.6.0 | |
+| v0.4.0 | >=v1.28.x | >=v0.7.0 | |
+| v0.6.0 | >=v1.28.x | >=v0.7.0 | |
+| v0.5.0 | >=v1.28.x | >=v0.6.0 | |
+| v0.4.0 | >=v1.28.x | >=v0.7.0 | |
 
 ---
 

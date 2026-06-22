@@ -167,58 +167,16 @@ func (r *RoleBasedGroupWarmupReconciler) reconcileUnfinished(ctx context.Context
 	return nil
 }
 
+// validate performs runtime validations that cannot be expressed as CRD CEL rules.
+// Structural validations (mutual exclusivity, required fields) are now enforced
+// at the API Server level via CEL XValidation markers on the CRD types.
+// This method is retained for any future cross-resource or state-dependent checks.
 func (r *RoleBasedGroupWarmupReconciler) validate(warmup workloadsv1alpha2.RoleBasedGroupWarmup) error {
-
-	targetValidationFunc := func(warmup workloadsv1alpha2.RoleBasedGroupWarmup) error {
-		// Validate that either targetNodes or targetRoleBasedGroup is set
-		if warmup.Spec.TargetNodes == nil && warmup.Spec.TargetRoleBasedGroup == nil {
-			return fmt.Errorf("either targetNodes or targetRoleBasedGroup must be specified")
-		}
-
-		if warmup.Spec.TargetNodes != nil && warmup.Spec.TargetRoleBasedGroup != nil {
-			return fmt.Errorf("only one of targetNodes or targetRoleBasedGroup may be specified")
-		}
-
-		return nil
-	}
-
-	targetNodesValidationFunc := func(warmup workloadsv1alpha2.RoleBasedGroupWarmup) error {
-		if warmup.Spec.TargetNodes != nil {
-			if len(warmup.Spec.TargetNodes.NodeSelector) == 0 && len(warmup.Spec.TargetNodes.NodeNames) == 0 {
-				return fmt.Errorf("either spec.targetNodes.nodeSelector or spec.targetNodes.nodeNames must be specified")
-			}
-		}
-
-		return nil
-	}
-
-	targetRoleBasedGroupValidationFunc := func(warmup workloadsv1alpha2.RoleBasedGroupWarmup) error {
-		if warmup.Spec.TargetRoleBasedGroup != nil {
-			if warmup.Spec.TargetRoleBasedGroup.Name == "" {
-				return fmt.Errorf("spec.targetRoleBasedGroup.name must be specified")
-			}
-
-			if len(warmup.Spec.TargetRoleBasedGroup.Roles) == 0 {
-				return fmt.Errorf("spec.targetRoleBasedGroup.roles must contain at least one role")
-			}
-		}
-
-		return nil
-	}
-
-	validationFuncs := []func(warmup workloadsv1alpha2.RoleBasedGroupWarmup) error{
-		targetValidationFunc,
-		targetNodesValidationFunc,
-		targetRoleBasedGroupValidationFunc,
-	}
-
-	for _, validateFn := range validationFuncs {
-		if err := validateFn(warmup); err != nil {
-			r.Recorder.Eventf(&warmup, corev1.EventTypeWarning, "ValidationFailed", err.Error())
-			return err
-		}
-	}
-
+	// All structural validations have been migrated to CEL expressions in
+	// api/workloads/v1alpha2/rolebasedgroupwarmup_types.go:
+	// - exactly one of targetNodes or targetRoleBasedGroup (XValidation on Spec)
+	// - targetNodes must have nodeNames or nodeSelector (XValidation on TargetNodes)
+	// - targetRoleBasedGroup.name MinLength=1, roles MinProperties=1
 	return nil
 }
 

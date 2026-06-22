@@ -60,21 +60,27 @@ type WarmupActions struct {
 	CustomizedAction *CustomizedAction `json:"customizedAction,omitempty"`
 }
 
+// +kubebuilder:validation:XValidation:rule="size(self.nodeNames) > 0 || size(self.nodeSelector) > 0",message="at least one of nodeNames or nodeSelector must be specified"
 type TargetNodes struct {
+	// +optional
 	NodeNames []string `json:"nodeNames,omitempty"`
 
+	// +optional
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 
 	WarmupActions `json:",inline"`
 }
 
 type TargetRoleBasedGroup struct {
+	// +kubebuilder:validation:MinLength=1
 	Name string `json:"name"`
 
+	// +kubebuilder:validation:MinProperties=1
 	Roles map[string]WarmupActions `json:"roles"`
 }
 
 // RoleBasedGroupWarmupSpec defines the desired state of RoleBasedGroupWarmup
+// +kubebuilder:validation:XValidation:rule="has(self.targetNodes) != has(self.targetRoleBasedGroup)",message="exactly one of targetNodes or targetRoleBasedGroup must be specified"
 type RoleBasedGroupWarmupSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file

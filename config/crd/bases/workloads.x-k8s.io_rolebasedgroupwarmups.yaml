@@ -40,6 +40,41 @@ spec:
           spec:
             description: spec defines the desired state of RoleBasedGroupWarmup
             properties:
+              policies:
+                description: |-
+                  Policies defines execution policies for the warmup job such as parallelism,
+                  backoff limits, timeouts, and TTL after completion.
+                properties:
+                  backoffLimit:
+                    description: |-
+                      BackoffLimit specifies the number of retries per node before marking the warmup as failed.
+                      Each node is retried independently. Defaults to 0 (no retries).
+                    format: int32
+                    minimum: 0
+                    type: integer
+                  parallelism:
+                    description: |-
+                      Parallelism specifies the maximum number of warmup Pods that can run concurrently.
+                      If not set, all warmup Pods will be created at once (no concurrency limit).
+                    format: int32
+                    minimum: 1
+                    type: integer
+                  timeoutSeconds:
+                    description: |-
+                      TimeoutSeconds specifies the maximum duration in seconds for the entire warmup job.
+                      After this duration, the warmup will be marked as failed and all running Pods will be deleted.
+                    format: int32
+                    minimum: 1
+                    type: integer
+                  ttlSecondsAfterFinished:
+                    description: |-
+                      TTLSecondsAfterFinished specifies the time-to-live in seconds after the warmup job
+                      finishes (completed or failed). After this duration, the warmup resource will be
+                      automatically deleted.
+                    format: int32
+                    minimum: 0
+                    type: integer
+                type: object
               targetNodes:
                 description: TargetNodes specifies explicit nodes and warmup actions
                   to perform on them.
@@ -3059,11 +3094,15 @@ spec:
                       type: string
                     type: object
                 type: object
+                x-kubernetes-validations:
+                - message: at least one of nodeNames or nodeSelector must be specified
+                  rule: size(self.nodeNames) > 0 || size(self.nodeSelector) > 0
               targetRoleBasedGroup:
                 description: TargetRoleBasedGroup specifies a RoleBasedGroup resource
                   to discover nodes from.
                 properties:
                   name:
+                    minLength: 1
                     type: string
                   roles:
                     additionalProperties:
@@ -6123,12 +6162,17 @@ spec:
                           - items
                           type: object
                       type: object
+                    minProperties: 1
                     type: object
                 required:
                 - name
                 - roles
                 type: object
             type: object
+            x-kubernetes-validations:
+            - message: exactly one of targetNodes or targetRoleBasedGroup must be
+                specified
+              rule: has(self.targetNodes) != has(self.targetRoleBasedGroup)
           status:
             description: status defines the observed state of RoleBasedGroupWarmup
             properties:
@@ -6201,6 +6245,14 @@ spec:
               failed:
                 format: int32
                 type: integer
+              nodeFailureCounts:
+                additionalProperties:
+                  format: int32
+                  type: integer
+                description: |-
+                  NodeFailureCounts tracks the number of times each node's warmup Pod has failed.
+                  Used internally by the controller to enforce backoffLimit per node.
+                type: object
               phase:
                 type: string
               ready:
